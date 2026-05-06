@@ -413,16 +413,21 @@
   flex-direction: row;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.3rem 0.55rem;
-  background: var(--mmm-sonos-bg);
-  border-radius: var(--mmm-sonos-border-radius);
-  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  padding: 0.45rem 0.2rem;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   min-width: 0;
-  transition: background 0.3s ease, opacity 0.3s ease;
+  transition: opacity 0.3s ease;
+}
+
+.mmm-sonos__mini-group:last-child {
+  border-bottom: none;
 }
 
 .mmm-sonos__mini-group.mmm-sonos__group--active {
-  background: linear-gradient(90deg, var(--mmm-sonos-active), rgba(255, 255, 255, 0.04));
+  background: transparent;
 }
 
 .mmm-sonos__mini-art {
@@ -464,8 +469,18 @@
 }
 
 .mmm-sonos__mini-title {
-  font-size: 0.8em;
-  font-weight: 500;
+  font-size: 0.88em;
+  font-weight: 600;
+  opacity: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.mmm-sonos__mini-artist {
+  font-size: 0.68em;
+  opacity: 0.6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -506,13 +521,9 @@
   background: rgba(var(--mmm-sonos-card-accent-rgb), var(--mmm-sonos-card-accent-opacity, 0.45)) !important;
 }
 
-/* Mini-mode accent: horizontal gradient (left = colour, right = dark) */
+/* Mini-mode accent: no background in the simplified design */
 .mmm-sonos__mini-group.mmm-sonos__group--accented {
-  background: linear-gradient(
-    90deg,
-    rgba(var(--mmm-sonos-card-accent-rgb), var(--mmm-sonos-card-accent-opacity, 0.45)),
-    rgba(0, 0, 0, 0.22)
-  ) !important;
+  background: transparent !important;
 }
 
 /* ===== FULLSCREEN MODE ===== */

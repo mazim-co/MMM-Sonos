@@ -231,6 +231,12 @@ Module.register('MMM-Sonos', {
     };
   },
 
+  getHeader() {
+    // Use header from config if explicitly set, otherwise default to this label.
+    // Override by adding header: 'Custom Name' to the module config in config.js.
+    return this.data.header || 'Playing on SONOS';
+  },
+
   getDom() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('mmm-sonos');

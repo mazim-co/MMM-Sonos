@@ -742,8 +742,10 @@
 /* ===== IDLE LOGO ===== */
 .mmm-sonos__idle-logo {
   display: block;
-  width: 100%;
+  width: 40%;
+  max-width: 160px;
   height: auto;
+  margin: 1rem auto;
   filter: brightness(0) invert(1);
   opacity: 0.25;
   animation: mmm-sonos-idle-breathe 4s ease-in-out infinite;

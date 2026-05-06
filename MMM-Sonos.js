@@ -1386,9 +1386,14 @@ Module.register('MMM-Sonos', {
     // Artist + source on one sub-line: "Astrud Gilberto • Spotify"
     const showArtist = this.config.miniShowArtist && group.artist;
     const showSource = this.config.miniShowSource && group.source && !group.isTvSource;
+    let artistLine = null;
+    let artistOuter = null;
     if (showArtist || showSource) {
-      const subLine = document.createElement('div');
-      subLine.className = 'mmm-sonos__mini-artist';
+      artistOuter = document.createElement('div');
+      artistOuter.className = 'mmm-sonos__mini-artist-outer';
+
+      artistLine = document.createElement('div');
+      artistLine.className = 'mmm-sonos__mini-artist';
       const subParts = [];
       if (showArtist) subParts.push(group.artist);
       if (showSource) {
@@ -1400,8 +1405,9 @@ Module.register('MMM-Sonos', {
         else sourceLabel = this.translate('SOURCE_UNKNOWN');
         subParts.push(sourceLabel);
       }
-      subLine.innerText = subParts.join(' • ');
-      textWrap.appendChild(subLine);
+      artistLine.innerText = subParts.join(' • ');
+      artistOuter.appendChild(artistLine);
+      textWrap.appendChild(artistOuter);
     }
 
     topRow.appendChild(textWrap);
@@ -1415,18 +1421,31 @@ Module.register('MMM-Sonos', {
 
     row.appendChild(inner);
 
-    // After insertion into the DOM, set the scroll amount and always activate the drift animation.
-    // Long titles scroll far enough to reveal the full text; short titles get a small fixed drift.
+    // After DOM insertion: measure overflow for title and artist, then activate drift animations.
+    // Both always animate — long text scrolls to reveal it all, short text gets a small fixed drift.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        const overflow = titleOuter.clientWidth > 0
+        // Title
+        const titleOverflow = titleOuter.clientWidth > 0
           ? Math.max(0, titleLine.scrollWidth - titleOuter.clientWidth)
           : 0;
-        const scrollPx = overflow > 0 ? overflow + 16 : 18;
-        const durationSecs = overflow > 0 ? Math.max(6, overflow / 40) : 8;
-        titleLine.style.setProperty('--mmm-sonos-scroll-amount', `-${scrollPx}px`);
-        titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${durationSecs}s`);
+        const titleScrollPx = titleOverflow > 0 ? titleOverflow + 16 : 18;
+        const titleDuration = titleOverflow > 0 ? Math.max(6, titleOverflow / 40) : 8;
+        titleLine.style.setProperty('--mmm-sonos-scroll-amount', `-${titleScrollPx}px`);
+        titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${titleDuration}s`);
         titleLine.classList.add('mmm-sonos__mini-title--scroll');
+
+        // Artist
+        if (artistOuter && artistLine) {
+          const artistOverflow = artistOuter.clientWidth > 0
+            ? Math.max(0, artistLine.scrollWidth - artistOuter.clientWidth)
+            : 0;
+          const artistScrollPx = artistOverflow > 0 ? artistOverflow + 16 : 18;
+          const artistDuration = artistOverflow > 0 ? Math.max(6, artistOverflow / 40) : 10;
+          artistLine.style.setProperty('--mmm-sonos-scroll-amount', `-${artistScrollPx}px`);
+          artistLine.style.setProperty('--mmm-sonos-artist-marquee-duration', `${artistDuration}s`);
+          artistLine.classList.add('mmm-sonos__mini-artist--scroll');
+        }
       });
     });
 

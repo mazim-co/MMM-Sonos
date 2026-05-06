@@ -1050,6 +1050,19 @@ Module.register('MMM-Sonos', {
 
       timeInfo.innerText = `${this._formatTime(progressData.currentPosition)} / ${this._formatTime(progressData.duration)}`;
     });
+
+    // Mini-mode progress bars (current time only — total is static)
+    document.querySelectorAll('.mmm-sonos__mini-progress-bar').forEach((bar) => {
+      const progressData = this._parseProgressData(bar.dataset);
+      if (!progressData) return;
+      bar.style.width = `${Math.min(100, Math.max(0, (progressData.currentPosition / progressData.duration) * 100))}%`;
+    });
+
+    document.querySelectorAll('.mmm-sonos__mini-progress-time').forEach((timeEl) => {
+      const progressData = this._parseProgressData(timeEl.dataset);
+      if (!progressData) return;
+      timeEl.innerText = this._formatTime(progressData.currentPosition);
+    });
   },
 
   _parseProgressData(dataset) {
@@ -1272,7 +1285,8 @@ Module.register('MMM-Sonos', {
     this.updateDom({ options: { speed: duration, animate: { out: anim.out, in: anim.in } } });
   },
 
-  // Render a compact single-row card for mini-mode display.
+  // Render a now-playing card for mini-mode: blurred album art background,
+  // scrolling title, and an optional slim progress bar at the bottom.
   _renderMiniGroup(group) {
     if (!group) return null;
 
@@ -1290,7 +1304,6 @@ Module.register('MMM-Sonos', {
     row.className = 'mmm-sonos__mini-group';
     row.dataset.groupId = group.id;
 
-    // Apply miniWidth if configured
     const miniW = this._normalizeSize(this.config.miniWidth);
     if (miniW) {
       row.style.maxWidth = miniW;
@@ -1301,26 +1314,32 @@ Module.register('MMM-Sonos', {
       row.classList.add('mmm-sonos__group--active');
     }
 
-    // Apply accent colour on mini card too
-    if (this.config.albumArtColors && group.accentColor) {
-      const { r, g, b } = group.accentColor;
-      row.style.setProperty('--mmm-sonos-card-accent-rgb', `${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}`);
-      row.style.setProperty('--mmm-sonos-card-accent-opacity', String(this.config.albumArtColorsOpacity ?? 0.45));
-      row.classList.add('mmm-sonos__group--accented');
-      if ((this.config.albumArtColorsMode || 'gradient').toLowerCase() === 'solid') {
-        row.classList.add('mmm-sonos__group--accented-solid');
-      }
+    // Blurred album art background + dark overlay
+    if (group.albumArt) {
+      const bg = document.createElement('div');
+      bg.className = 'mmm-sonos__mini-bg';
+      bg.style.backgroundImage = `url(${group.albumArt})`;
+      row.appendChild(bg);
+
+      const overlay = document.createElement('div');
+      overlay.className = 'mmm-sonos__mini-overlay';
+      row.appendChild(overlay);
     }
 
-    // Thumbnail artwork
+    // Inner content (z-index above the blurred background)
+    const inner = document.createElement('div');
+    inner.className = 'mmm-sonos__mini-inner';
+
+    // Top row: album art thumbnail + text
+    const topRow = document.createElement('div');
+    topRow.className = 'mmm-sonos__mini-top';
+
     const art = document.createElement('div');
     art.className = 'mmm-sonos__mini-art' + (group.albumArt ? '' : ' mmm-sonos__mini-art--placeholder');
     art.style.width = sizeValue;
     art.style.height = sizeValue;
     if (group.albumArt) {
       const img = document.createElement('img');
-      // Use eager loading: on a MagicMirror display every card is always visible,
-      // so lazy loading only delays the image; eager gives instant display.
       img.loading = 'eager';
       img.src = group.albumArt;
       img.alt = '';
@@ -1329,9 +1348,9 @@ Module.register('MMM-Sonos', {
       img.onerror = () => { art.style.display = 'none'; };
       art.appendChild(img);
     }
-    row.appendChild(art);
+    topRow.appendChild(art);
 
-    // Text block
+    // Text column
     const textWrap = document.createElement('div');
     textWrap.className = 'mmm-sonos__mini-text';
 
@@ -1342,12 +1361,17 @@ Module.register('MMM-Sonos', {
       textWrap.appendChild(badge);
     }
 
+    // Title in an overflow-clipping wrapper so the scroll animation stays inside the card
+    const titleOuter = document.createElement('div');
+    titleOuter.className = 'mmm-sonos__mini-title-outer';
+
     const titleLine = document.createElement('div');
     titleLine.className = 'mmm-sonos__mini-title';
     titleLine.innerText = group.title || this.translate('UNKNOWN_TRACK');
-    textWrap.appendChild(titleLine);
+    titleOuter.appendChild(titleLine);
+    textWrap.appendChild(titleOuter);
 
-    // Artist + source on a single sub-line (e.g. "Astrud Gilberto • Spotify")
+    // Artist + source on one sub-line: "Astrud Gilberto • Spotify"
     const showArtist = this.config.miniShowArtist && group.artist;
     const showSource = this.config.miniShowSource && group.source && !group.isTvSource;
     if (showArtist || showSource) {
@@ -1368,8 +1392,68 @@ Module.register('MMM-Sonos', {
       textWrap.appendChild(subLine);
     }
 
-    row.appendChild(textWrap);
+    topRow.appendChild(textWrap);
+    inner.appendChild(topRow);
+
+    // Slim progress bar spanning the full card width
+    if (this.config.showProgress && group.duration != null && group.duration > 0) {
+      const progressEl = this._renderMiniProgress(group.position ?? 0, group.duration);
+      if (progressEl) inner.appendChild(progressEl);
+    }
+
+    row.appendChild(inner);
+
+    // After insertion into the DOM, measure title overflow and activate scrolling if needed
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (titleOuter.clientWidth > 0 && titleLine.scrollWidth > titleOuter.clientWidth) {
+          const overflow = titleLine.scrollWidth - titleOuter.clientWidth;
+          titleLine.style.setProperty('--mmm-sonos-scroll-amount', `-${overflow + 16}px`);
+          titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${Math.max(6, overflow / 40)}s`);
+          titleLine.classList.add('mmm-sonos__mini-title--scroll');
+        }
+      });
+    });
+
     return row;
+  },
+
+  // Slim progress bar for mini-mode: current time left, total time right, bar in between.
+  _renderMiniProgress(position, duration) {
+    if (position == null || duration == null || duration <= 0) return null;
+
+    const container = document.createElement('div');
+    container.className = 'mmm-sonos__mini-progress';
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'mmm-sonos__mini-progress-bar-wrap';
+
+    const bar = document.createElement('div');
+    bar.className = 'mmm-sonos__mini-progress-bar';
+    bar.dataset.initialPosition = position;
+    bar.dataset.duration = duration;
+    bar.dataset.timestamp = this.lastUpdated || Date.now();
+    bar.style.width = `${Math.min(100, Math.max(0, (position / duration) * 100))}%`;
+    barWrap.appendChild(bar);
+    container.appendChild(barWrap);
+
+    const times = document.createElement('div');
+    times.className = 'mmm-sonos__mini-progress-times';
+
+    const currentTime = document.createElement('span');
+    currentTime.className = 'mmm-sonos__mini-progress-time';
+    currentTime.dataset.initialPosition = position;
+    currentTime.dataset.duration = duration;
+    currentTime.dataset.timestamp = this.lastUpdated || Date.now();
+    currentTime.innerText = this._formatTime(position);
+    times.appendChild(currentTime);
+
+    const totalTime = document.createElement('span');
+    totalTime.innerText = this._formatTime(duration);
+    times.appendChild(totalTime);
+
+    container.appendChild(times);
+    return container;
   },
 
   // Resolve which group to show in fullscreen mode.
@@ -1585,6 +1669,22 @@ Module.register('MMM-Sonos', {
         timeDisplay.dataset.initialPosition = safePosition;
         timeDisplay.dataset.duration = group.duration;
         timeDisplay.dataset.timestamp = newTimestamp;
+      }
+
+      // Mini-mode progress elements
+      const miniBar = groupElement.querySelector('.mmm-sonos__mini-progress-bar');
+      const miniTime = groupElement.querySelector('.mmm-sonos__mini-progress-time');
+
+      if (miniBar) {
+        miniBar.dataset.initialPosition = safePosition;
+        miniBar.dataset.duration = group.duration;
+        miniBar.dataset.timestamp = newTimestamp;
+      }
+
+      if (miniTime) {
+        miniTime.dataset.initialPosition = safePosition;
+        miniTime.dataset.duration = group.duration;
+        miniTime.dataset.timestamp = newTimestamp;
       }
     });
   },

@@ -1435,16 +1435,16 @@ Module.register('MMM-Sonos', {
         titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${titleDuration}s`);
         titleLine.classList.add('mmm-sonos__mini-title--scroll');
 
-        // Artist
+        // Artist — only scroll when text actually overflows
         if (artistOuter && artistLine) {
           const artistOverflow = artistOuter.clientWidth > 0
             ? Math.max(0, artistLine.scrollWidth - artistOuter.clientWidth)
             : 0;
-          const artistScrollPx = artistOverflow > 0 ? artistOverflow + 16 : 18;
-          const artistDuration = artistOverflow > 0 ? Math.max(6, artistOverflow / 40) : 10;
-          artistLine.style.setProperty('--mmm-sonos-scroll-amount', `-${artistScrollPx}px`);
-          artistLine.style.setProperty('--mmm-sonos-artist-marquee-duration', `${artistDuration}s`);
-          artistLine.classList.add('mmm-sonos__mini-artist--scroll');
+          if (artistOverflow > 0) {
+            artistLine.style.setProperty('--mmm-sonos-scroll-amount', `-${artistOverflow + 16}px`);
+            artistLine.style.setProperty('--mmm-sonos-artist-marquee-duration', `${Math.max(6, artistOverflow / 40)}s`);
+            artistLine.classList.add('mmm-sonos__mini-artist--scroll');
+          }
         }
       });
     });

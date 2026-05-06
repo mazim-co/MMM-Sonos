@@ -1344,22 +1344,28 @@ Module.register('MMM-Sonos', {
 
     const titleLine = document.createElement('div');
     titleLine.className = 'mmm-sonos__mini-title';
-    let titleText = group.title || this.translate('UNKNOWN_TRACK');
-    if (this.config.miniShowArtist && group.artist) {
-      titleText += ` · ${group.artist}`;
-    }
-    titleLine.innerText = titleText;
+    titleLine.innerText = group.title || this.translate('UNKNOWN_TRACK');
     textWrap.appendChild(titleLine);
 
-    if (this.config.miniShowSource && group.source && !group.isTvSource) {
-      const sourceEl = document.createElement('div');
-      sourceEl.className = 'mmm-sonos__mini-source';
-      const s = (group.source || '').toLowerCase();
-      if (s.includes('spotify')) sourceEl.innerText = this.translate('SOURCE_SPOTIFY');
-      else if (s.includes('apple')) sourceEl.innerText = this.translate('SOURCE_APPLE_MUSIC');
-      else if (s.includes('radio') || s.includes('stream')) sourceEl.innerText = this.translate('SOURCE_RADIO');
-      else sourceEl.innerText = this.translate('SOURCE_UNKNOWN');
-      textWrap.appendChild(sourceEl);
+    // Artist + source on a single sub-line (e.g. "Astrud Gilberto • Spotify")
+    const showArtist = this.config.miniShowArtist && group.artist;
+    const showSource = this.config.miniShowSource && group.source && !group.isTvSource;
+    if (showArtist || showSource) {
+      const subLine = document.createElement('div');
+      subLine.className = 'mmm-sonos__mini-artist';
+      const subParts = [];
+      if (showArtist) subParts.push(group.artist);
+      if (showSource) {
+        const s = (group.source || '').toLowerCase();
+        let sourceLabel;
+        if (s.includes('spotify')) sourceLabel = this.translate('SOURCE_SPOTIFY');
+        else if (s.includes('apple')) sourceLabel = this.translate('SOURCE_APPLE_MUSIC');
+        else if (s.includes('radio') || s.includes('stream')) sourceLabel = this.translate('SOURCE_RADIO');
+        else sourceLabel = this.translate('SOURCE_UNKNOWN');
+        subParts.push(sourceLabel);
+      }
+      subLine.innerText = subParts.join(' • ');
+      textWrap.appendChild(subLine);
     }
 
     row.appendChild(textWrap);

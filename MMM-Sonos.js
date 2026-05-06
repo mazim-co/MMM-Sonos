@@ -64,7 +64,10 @@ Module.register('MMM-Sonos', {
     fullscreenWidth: null,         // max-width of the fullscreen wrapper, e.g. 600 or '600px'
     // Whitelist: if non-empty only matching speakers/groups are shown (per-instance)
     allowedSpeakers: [],      // e.g. ['Stue', 'Kjøkken'] — speaker/room names
-    allowedGroups: []         // e.g. group names or coordinator IPs
+    allowedGroups: [],        // e.g. group names or coordinator IPs
+    // Idle state: show a logo when nothing is playing instead of hiding the module
+    showIdleLogo: false,
+    idleLogoPath: 'assets/Sonos_logo.svg',
   },
 
   start() {
@@ -274,6 +277,15 @@ Module.register('MMM-Sonos', {
     }
 
     if (!this.groups || this.groups.length === 0) {
+      if (this.config.showIdleLogo) {
+        const logo = document.createElement('img');
+        logo.src = this.file(this.config.idleLogoPath || 'assets/Sonos_logo.svg');
+        logo.className = 'mmm-sonos__idle-logo';
+        logo.alt = 'Sonos';
+        wrapper.appendChild(logo);
+        return wrapper;
+      }
+
       const emptyMessage = document.createElement('div');
       emptyMessage.classList.add('mmm-sonos__empty');
       emptyMessage.innerText = this.translate('NO_ACTIVE_SONOS');
@@ -1403,15 +1415,18 @@ Module.register('MMM-Sonos', {
 
     row.appendChild(inner);
 
-    // After insertion into the DOM, measure title overflow and activate scrolling if needed
+    // After insertion into the DOM, set the scroll amount and always activate the drift animation.
+    // Long titles scroll far enough to reveal the full text; short titles get a small fixed drift.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (titleOuter.clientWidth > 0 && titleLine.scrollWidth > titleOuter.clientWidth) {
-          const overflow = titleLine.scrollWidth - titleOuter.clientWidth;
-          titleLine.style.setProperty('--mmm-sonos-scroll-amount', `-${overflow + 16}px`);
-          titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${Math.max(6, overflow / 40)}s`);
-          titleLine.classList.add('mmm-sonos__mini-title--scroll');
-        }
+        const overflow = titleOuter.clientWidth > 0
+          ? Math.max(0, titleLine.scrollWidth - titleOuter.clientWidth)
+          : 0;
+        const scrollPx = overflow > 0 ? overflow + 16 : 18;
+        const durationSecs = overflow > 0 ? Math.max(6, overflow / 40) : 8;
+        titleLine.style.setProperty('--mmm-sonos-scroll-amount', `-${scrollPx}px`);
+        titleLine.style.setProperty('--mmm-sonos-marquee-duration', `${durationSecs}s`);
+        titleLine.classList.add('mmm-sonos__mini-title--scroll');
       });
     });
 

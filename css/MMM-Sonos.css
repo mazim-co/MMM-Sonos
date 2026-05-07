@@ -502,21 +502,25 @@
   text-overflow: ellipsis;
 }
 
-/* Clip container for scrolling title */
+/* Clip container for scrolling title — absolutely positioned child never affects parent width */
 .mmm-sonos__mini-title-outer {
+  position: relative;
   overflow: hidden;
   width: 100%;
+  height: 1.35em;
 }
 
 .mmm-sonos__mini-title {
+  position: absolute;
+  left: 0;
+  top: 0;
   font-size: 1em;
   font-weight: 600;
   white-space: nowrap;
-  display: inline-block;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-/* Horizontal drift/scroll animation — always active, amount set by JS */
+/* Horizontal drift/scroll animation — amount set by JS */
 .mmm-sonos__mini-title--scroll {
   animation: mmm-sonos-marquee var(--mmm-sonos-marquee-duration, 8s) ease-in-out infinite;
 }
@@ -528,16 +532,20 @@
 }
 
 .mmm-sonos__mini-artist-outer {
+  position: relative;
   overflow: hidden;
   width: 100%;
+  height: calc(0.72em * 1.35);
 }
 
 .mmm-sonos__mini-artist {
+  position: absolute;
+  left: 0;
+  top: 0;
   font-size: 0.72em;
   opacity: 0.65;
   white-space: nowrap;
-  display: inline-block;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .mmm-sonos__mini-artist--scroll {

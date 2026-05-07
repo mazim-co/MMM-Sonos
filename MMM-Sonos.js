@@ -584,7 +584,7 @@ Module.register('MMM-Sonos', {
 
       const title = document.createElement('div');
       title.className = 'mmm-sonos__title';
-      title.innerText = group.title || this.translate('UNKNOWN_TRACK');
+      title.innerText = this._decodeEntities(group.title) || this.translate('UNKNOWN_TRACK');
       if (this.config.maxTextLines > 0) {
         title.style.setProperty('--mmm-sonos-title-lines', this.config.maxTextLines);
       }
@@ -593,14 +593,14 @@ Module.register('MMM-Sonos', {
       if (group.artist) {
         const artist = document.createElement('div');
         artist.className = 'mmm-sonos__artist';
-        artist.innerText = group.artist;
+        artist.innerText = this._decodeEntities(group.artist);
         titleWrapper.appendChild(artist);
       }
 
       if (this.config.showAlbum && group.album) {
         const album = document.createElement('div');
         album.className = 'mmm-sonos__album';
-        album.innerText = group.album;
+        album.innerText = this._decodeEntities(group.album);
         titleWrapper.appendChild(album);
       }
 
@@ -995,6 +995,14 @@ Module.register('MMM-Sonos', {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   },
 
+  // Decode HTML entities (e.g. &quot; → ") that some Sonos sources embed in track metadata.
+  _decodeEntities(str) {
+    if (!str || typeof str !== 'string') return str;
+    const el = document.createElement('textarea');
+    el.innerHTML = str;
+    return el.value;
+  },
+
   _isTvSource(group) {
     const source = (group?.source || '').toLowerCase();
     return group?.isTvSource || source === 'tv' || source === 'tvs';
@@ -1385,7 +1393,7 @@ Module.register('MMM-Sonos', {
 
     const titleLine = document.createElement('div');
     titleLine.className = 'mmm-sonos__mini-title';
-    titleLine.innerText = group.title || this.translate('UNKNOWN_TRACK');
+    titleLine.innerText = this._decodeEntities(group.title) || this.translate('UNKNOWN_TRACK');
     titleOuter.appendChild(titleLine);
     textWrap.appendChild(titleOuter);
 
@@ -1401,7 +1409,7 @@ Module.register('MMM-Sonos', {
       artistLine = document.createElement('div');
       artistLine.className = 'mmm-sonos__mini-artist';
       const subParts = [];
-      if (showArtist) subParts.push(group.artist);
+      if (showArtist) subParts.push(this._decodeEntities(group.artist));
       if (showSource) {
         const s = (group.source || '').toLowerCase();
         let sourceLabel;
@@ -1615,20 +1623,20 @@ Module.register('MMM-Sonos', {
     if (hasTrackInfo && !titleIsDuplicateTv) {
       const title = document.createElement('div');
       title.className = 'mmm-sonos__fullscreen-title';
-      title.innerText = group.title || this.translate('UNKNOWN_TRACK');
+      title.innerText = this._decodeEntities(group.title) || this.translate('UNKNOWN_TRACK');
       content.appendChild(title);
 
       if (group.artist) {
         const artist = document.createElement('div');
         artist.className = 'mmm-sonos__fullscreen-artist';
-        artist.innerText = group.artist;
+        artist.innerText = this._decodeEntities(group.artist);
         content.appendChild(artist);
       }
 
       if (this.config.showAlbum && group.album) {
         const album = document.createElement('div');
         album.className = 'mmm-sonos__fullscreen-album';
-        album.innerText = group.album;
+        album.innerText = this._decodeEntities(group.album);
         content.appendChild(album);
       }
     }

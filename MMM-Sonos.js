@@ -1439,9 +1439,9 @@ Module.register('MMM-Sonos', {
     // Both always animate — long text scrolls to reveal it all, short text gets a small fixed drift.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // Title
+        // Title — offsetWidth gives true text width for absolutely-positioned elements
         const titleOverflow = titleOuter.clientWidth > 0
-          ? Math.max(0, titleLine.scrollWidth - titleOuter.clientWidth)
+          ? Math.max(0, titleLine.offsetWidth - titleOuter.clientWidth)
           : 0;
         const titleScrollPx = titleOverflow > 0 ? titleOverflow + 16 : 18;
         const titleDuration = titleOverflow > 0 ? Math.max(6, titleOverflow / 40) : 8;
@@ -1452,7 +1452,7 @@ Module.register('MMM-Sonos', {
         // Artist — only scroll when text actually overflows
         if (artistOuter && artistLine) {
           const artistOverflow = artistOuter.clientWidth > 0
-            ? Math.max(0, artistLine.scrollWidth - artistOuter.clientWidth)
+            ? Math.max(0, artistLine.offsetWidth - artistOuter.clientWidth)
             : 0;
           if (artistOverflow > 0) {
             artistLine.style.setProperty('--mmm-sonos-scroll-amount', `-${artistOverflow + 16}px`);
